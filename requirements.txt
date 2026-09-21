@@ -1,0 +1,31 @@
+# Dependencias de la práctica. Versiones FIJADAS, no rangos.
+#
+# El motivo está explicado en el notebook de la sesión 1: LangChain publica
+# cada pocos días y una API que se mueve por debajo de un notebook lo rompe
+# sin que se haya tocado una línea de código. `>=1.3` no es una versión.
+#
+# Verificado contra la documentación instalada el 21/09/2026.
+
+# --- Agente -----------------------------------------------------------------
+langchain==1.3.18
+langchain-core==1.6.1
+langgraph==1.2.11
+langchain-openai==1.6.0          # sustituye a langchain-openrouter de clase
+
+# --- Retrieval --------------------------------------------------------------
+sentence-transformers==6.0.1     # BAAI/bge-small-en-v1.5 y el cross-encoder
+faiss-cpu==1.15.0                # IndexFlatIP sobre vectores normalizados
+rank-bm25==0.2.2                 # señal léxica del retriever híbrido
+
+# --- Datos y medición -------------------------------------------------------
+pandas==3.0.2
+numpy==2.4.4
+pyarrow==24.0.0                  # lectura/escritura de parquet
+
+# --- Informe ----------------------------------------------------------------
+reportlab==5.0.1                 # PDF generado por código, sin LaTeX
+matplotlib==3.10.9               # gráficos del informe
+
+# --- Notebooks --------------------------------------------------------------
+jupyterlab==4.5.7
+ipykernel==7.2.0
