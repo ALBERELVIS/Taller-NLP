@@ -86,8 +86,8 @@ ficheros temporales.
 | Notebook | Qué hace | Necesita el modelo | Tarda |
 | --- | --- | --- | --- |
 | `00_Preparacion_del_corpus.ipynb` | Reconstruye `secciones.jsonl`, `chunks.jsonl` y `xbrl_facts.parquet`, y los valida contra el golden set oficial | no | ~3 min |
-| `S1_Herramientas_y_Bucle_Alumno.ipynb` | Material de la sesión 1, resuelto: las cuatro herramientas y el bucle ReAct a mano | sí | ~5 min |
-| `S2_Robustez_y_Evaluacion_Alumno.ipynb` | Material de la sesión 2, resuelto: retrieval, guardrails y evaluadores | sí | ~10 min |
+| `01_Herramientas_y_Bucle_Alumno.ipynb` | Material de la sesión 1, resuelto: las cuatro herramientas y el bucle ReAct a mano | sí | ~5 min |
+| `02_Robustez_y_Evaluacion_Alumno.ipynb` | Material de la sesión 2, resuelto: retrieval, guardrails y evaluadores | sí | ~10 min |
 | `03_Golden_set_propio.ipynb` | Construye y valida `golden_set_propio.jsonl` y `golden_set_ausencias.jsonl` | no | ~1 min |
 | `04_Retrieval_experimentos.ipynb` | Mide el `recall@5` de ocho configuraciones de *retrieval* | sí | ~8 min |
 | `05_Evaluacion_baseline_vs_final.ipynb` | Evalúa los tres perfiles sobre los tres conjuntos y guarda los resultados crudos | sí | ~70 min |
