@@ -41,7 +41,9 @@ PREFIJO_CONSULTA_BGE = (
 
 CANDIDATOS_CORPUS = [
     Path("corpus"),
-    Path("/content/corpus")]
+    Path("/content/corpus"),
+    Path(__file__).resolve().parent.parent / "corpus",
+]
 
 
 class CorpusNoEncontrado(RuntimeError):

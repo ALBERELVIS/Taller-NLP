@@ -47,9 +47,9 @@ RAIZ = Path(__file__).resolve().parent.parent
 RUTA_CLAVE = RAIZ / "api_key.txt"
 
 # El corpus reconstruido por `00_Preparacion_del_corpus.ipynb`. Se llama
-# `corpus/` y vive en la raíz a propósito: es exactamente donde lo buscan
-# `miax_s1.py` y `miax_s2.py`, que se reparten en clase y que no vamos a
-# modificar. Ver `CANDIDATOS_CORPUS` en esos dos módulos.
+# `corpus/` y vive en la raíz a propósito: es el primer sitio donde lo buscan
+# `modulos/miax_s1.py` y `modulos/miax_s2.py` (respecto al directorio de
+# trabajo). Ver `CANDIDATOS_CORPUS` en esos dos módulos.
 DIR_CORPUS = RAIZ / "corpus"
 DIR_INDICE = DIR_CORPUS / "indice"
 
@@ -62,10 +62,13 @@ RUTA_XBRL = DIR_CORPUS / "xbrl_facts.parquet"
 RUTA_FAISS = DIR_INDICE / "corpus.faiss"
 RUTA_META = DIR_INDICE / "chunks_meta.parquet"
 
-RUTA_GOLDEN_OFICIAL = RAIZ / "golden_set.jsonl"
-RUTA_GOLDEN_PROPIO = RAIZ / "golden_set_propio.jsonl"
-RUTA_GOLDEN_AUSENCIAS = RAIZ / "golden_set_ausencias.jsonl"
-RUTA_HOLDOUT_SIMULADO = RAIZ / "holdout_simulado.jsonl"
+# Los conjuntos de preguntas viven en `golden/`, no en la raíz.
+DIR_GOLDEN = RAIZ / "golden"
+RUTA_GOLDEN_OFICIAL = DIR_GOLDEN / "golden_set.jsonl"
+RUTA_GOLDEN_EJEMPLO = DIR_GOLDEN / "golden_set_ejemplo.jsonl"
+RUTA_GOLDEN_PROPIO = DIR_GOLDEN / "golden_set_propio.jsonl"
+RUTA_GOLDEN_AUSENCIAS = DIR_GOLDEN / "golden_set_ausencias.jsonl"
+RUTA_HOLDOUT_SIMULADO = DIR_GOLDEN / "holdout_simulado.jsonl"
 
 DIR_RESULTADOS = RAIZ / "resultados"
 DIR_INFORME = RAIZ / "informe"

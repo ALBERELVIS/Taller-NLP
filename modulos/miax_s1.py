@@ -42,6 +42,7 @@ PREFIJO_CONSULTA_BGE = (
 CANDIDATOS_CORPUS = [
     Path("corpus"),
     Path("/content/corpus"),
+    Path(__file__).resolve().parent.parent / "corpus",
     Path(__file__).resolve().parent / "corpus",
     Path(__file__).resolve().parents[3] / "data" / "corpus",
 ]
@@ -229,5 +230,5 @@ def demo_apertura(agente=None, pregunta: str | None = None) -> dict:
     if meta.get("origen") != "ejecucion_real":
         print("[AVISO: traza PROVISIONAL. Las salidas de herramienta son "
               "reales, la prosa final es de ejemplo. Regenérala con "
-              "`python generar_traza_demo.py` en cuanto haya clave.]")
+              "`python modulos/generar_traza_demo.py` en cuanto haya clave.]")
     return grabacion

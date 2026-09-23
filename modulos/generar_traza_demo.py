@@ -10,16 +10,16 @@ por eso `demo_apertura()` termina en un `KeyError`.
 El propio `miax_s1.py` dice qué hacer con eso:
 
     [AVISO: traza PROVISIONAL. Las salidas de herramienta son reales, la prosa
-     final es de ejemplo. Regenérala con `python generar_traza_demo.py` en
-     cuanto haya clave.]
+     final es de ejemplo. Regenérala con `python modulos/generar_traza_demo.py`
+     en cuanto haya clave.]
 
 Ese script no venía con el material. Esto es ese script.
 
 Uso:
 
-    python generar_traza_demo.py                 # regenera con el perfil final
-    python generar_traza_demo.py --perfil baseline
-    python generar_traza_demo.py --pregunta "..."
+    python modulos/generar_traza_demo.py                 # perfil final
+    python modulos/generar_traza_demo.py --perfil baseline
+    python modulos/generar_traza_demo.py --pregunta "..."
 
 Requisitos: `api_key.txt` con la clave, y el corpus montado (notebook 00).
 
@@ -39,7 +39,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parent
+AQUI = Path(__file__).resolve().parent
+RAIZ = AQUI.parent
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
@@ -47,7 +48,7 @@ from agente import config
 from agente.agente import cronometrar, herramientas_usadas
 from agente.interfaz import responder
 
-RUTA = RAIZ / "demo_traza.json"
+RUTA = AQUI / "demo_traza.json"
 
 # La pregunta de la demo de apertura. Se mantiene la del fichero repartido si
 # está, para que la clase vea exactamente lo mismo que enseña el profesor.

@@ -282,23 +282,51 @@ def hibrido(
 # ---------------------------------------------------------------------------
 # 4. Reescritura de la consulta con el propio modelo
 # ---------------------------------------------------------------------------
-INSTRUCCION_REESCRITURA = """Reescribe la pregunta del usuario como una consulta de búsqueda para un índice de informes 10-K escritos en INGLÉS.
+INSTRUCCION_REESCRITURA = """Reescribe la pregunta del usuario como UNA frase de búsqueda para un índice de informes 10-K escritos en INGLÉS.
 
 Reglas:
-- Devuelve SOLO la consulta, sin comillas, sin explicación y sin prefijos.
-- Escribe en inglés, usando el vocabulario del propio informe: "net sales",
-  "revenue increased", "risk factors", "gross margin percentage",
-  "capital expenditures", "provision for income taxes".
+- Devuelve SOLO esa frase, sin comillas, sin explicación y sin prefijos.
+- Una frase en inglés llano. Prohibido usar AND, OR, NOT, paréntesis o
+  comillas: el buscador no entiende operadores booleanos y tratarlos como
+  palabras empeora la recuperación.
+- Usa el vocabulario del propio informe: "net sales", "revenue increased",
+  "risk factors", "gross margin", "capital expenditures",
+  "effective tax rate", "export controls". No añadas la palabra "percentage"
+  salvo que la pregunta pida explícitamente un porcentaje.
 - Conserva intactos los elementos estructurales: el ticker, el ejercicio
   fiscal, la sección si está explícita y la magnitud concreta que se busca.
 - No inventes hechos, cifras ni nombres que no estén en la pregunta.
+- Si la pregunta pide por qué cambió una magnitud, la frase nombra la CAUSA
+  (capital expenditures, effective tax rate, export controls, demand), no la
+  cifra: las cifras se consultan en XBRL, no se buscan en el texto.
 - Si la pregunta compara dos ejercicios, escribe la consulta sobre la
-  EXPLICACIÓN de la variación, no sobre las cifras: las cifras se consultan en
-  XBRL, no se buscan en el texto."""
+  EXPLICACIÓN de la variación, no sobre las cifras."""
+
+# La caché anterior guardaba consultas booleanas. Cambiar el nombre hace que
+# dejen de leerse sin borrar el fichero viejo: un clon que aún lo tenga no
+# reutiliza una reescritura escrita con la instrucción anterior.
+VERSION_CACHE_REESCRITURA = 2
+_OPERADORES_BOOLEANOS = re.compile(
+    r"\b(?:AND|OR|NOT)\b|[()“”«»\"]",
+    re.IGNORECASE,
+)
+_ESPACIOS_REESCRITURA = re.compile(r"\s+")
+
+
+def _consulta_plana(texto: str) -> str:
+    """La reescritura, sin operadores booleanos ni comillas.
+
+    Se aplica también a lo que sale de la caché. El modelo a veces desobedece
+    la instrucción y devuelve `(Business OR Risk Factors) AND China`; el índice
+    denso no interpreta esos operadores y la consulta deja de parecerse a la
+    frase del informe.
+    """
+    limpia = _OPERADORES_BOOLEANOS.sub(" ", texto)
+    return _ESPACIOS_REESCRITURA.sub(" ", limpia).strip(" .,;")
 
 
 def _ruta_cache_reescrituras():
-    return config.DIR_CACHE / "reescrituras.json"
+    return config.DIR_CACHE / f"reescrituras_v{VERSION_CACHE_REESCRITURA}.json"
 
 
 @functools.lru_cache(maxsize=1)
@@ -352,12 +380,12 @@ def reescribir(pregunta: str, usar_cache: bool = True) -> str:
     """
     cache = _cache_reescrituras()
     if usar_cache and pregunta in cache:
-        return cache[pregunta]
+        return _consulta_plana(cache[pregunta]) or pregunta
 
     if not config.hay_modelo():
         return pregunta
     try:
-        consulta = (
+        consulta = _consulta_plana(
             _reescritor()
             .invoke(
                 [
@@ -365,8 +393,7 @@ def reescribir(pregunta: str, usar_cache: bool = True) -> str:
                     {"role": "user", "content": pregunta},
                 ]
             )
-            .text.strip()
-            .strip('"')
+            .text
         )
     except Exception:
         return pregunta
