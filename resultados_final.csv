@@ -1,0 +1,6 @@
+id,familia,ticker,latencia_s,coste_usd,llamadas,cita,cifra,trayectoria,recall
+of-006,extractiva,AMZN,31.70827260000806,0.0059945,1,True,,True,True
+of-002,extractiva,MSFT,22.512039299996104,0.00643675,2,True,,True,True
+of-020,comparativa,META,42.40795729999081,0.01096,4,True,True,True,False
+of-012,numerica,GOOGL,8.16716080000333,0.00429075,2,,True,True,
+of-019,comparativa,AAPL,36.168057200004114,0.01183775,4,True,True,True,True

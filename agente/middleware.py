@@ -44,6 +44,8 @@ vez** por invocación, `ModelCallLimitMiddleware` acota las vueltas al modelo, y
 
 from __future__ import annotations
 
+import re
+
 from langchain.agents.middleware import (
     AgentState,
     ModelCallLimitMiddleware,
@@ -58,14 +60,15 @@ from agente import config, corpus
 # saber, mirando solo el estado, si ya se ha corregido en esta invocación.
 MARCA = "VERIFICACIÓN AUTOMÁTICA"
 
-# Unidades en las que la cifra NO es un hecho XBRL y por tanto no se puede
-# contrastar contra la tabla. Un crecimiento del 62 % es una magnitud derivada
-# correcta que no aparece en ningún `xbrl_facts.parquet`, y compararla contra
-# los hechos reportados produciría una falsa alarma: el verificador mandaría
-# corregir una respuesta que está bien y gastaría una vuelta del modelo.
+# Unidades que no son un hecho XBRL. Un crecimiento del 62 % es una magnitud
+# derivada correcta, pero solo cuando la pregunta la pide. Si la pregunta pide
+# el margen bruto o el beneficio y el modelo rellena `cifra` con un 46,9, eso
+# no es un redondeo: es el tanto por ciento en el campo donde tiene que ir el
+# valor absoluto, y hay que devolverlo.
 UNIDADES_NO_VERIFICABLES = {
     "%",
     "porcentaje",
+    "porcentual",
     "percent",
     "percentage",
     "pp",
@@ -74,6 +77,17 @@ UNIDADES_NO_VERIFICABLES = {
     "veces",
     "x",
 }
+
+# La excepción se decide por la pregunta, no por la unidad sola. «Margen
+# bruto» no está en esta lista a propósito: en este corpus es GrossProfit en
+# dólares, y tratarlo como porcentaje es el fallo que el guardrail tiene que
+# atrapar.
+_PISTAS_MAGNITUD_DERIVADA = re.compile(
+    r"porcentaje|porcentual|por ciento|puntos porcentuales|"
+    r"tipo impositivo|tipo efectivo|effective tax|"
+    r"\bpercent(?:age)?\b|\bratio\b|múltiplo|multiplo|\bveces\b|(?<!\w)%",
+    re.IGNORECASE,
+)
 
 
 def cuadra(afirmada: float, real: float, tolerancia: float | None = None) -> bool:
@@ -95,6 +109,46 @@ def cuadra(afirmada: float, real: float, tolerancia: float | None = None) -> boo
 
 def _ya_se_corrigio(mensajes) -> bool:
     return any(MARCA in str(getattr(m, "content", "") or "") for m in mensajes)
+
+
+def _pregunta_original(mensajes) -> str:
+    """El texto de la pregunta del usuario, sin los avisos del propio guardrail."""
+    for mensaje in mensajes:
+        if isinstance(mensaje, dict):
+            contenido = str(mensaje.get("content") or "")
+            tipo = mensaje.get("type") or mensaje.get("role")
+        else:
+            contenido = str(getattr(mensaje, "content", "") or "")
+            tipo = getattr(mensaje, "type", None)
+        if MARCA in contenido:
+            continue
+        nombre = type(mensaje).__name__
+        if tipo in ("human", "user") or nombre == "HumanMessage":
+            return contenido
+    return ""
+
+
+def _pregunta_pide_magnitud_derivada(mensajes) -> bool:
+    """¿La pregunta pide un porcentaje, un tipo o un múltiplo, y no un hecho XBRL?
+
+    La unidad de la respuesta no basta. El modelo pone «percent» también cuando
+    la pregunta pedía el margen bruto en dólares, y en ese caso el porcentaje
+    sí hay que contrastarlo: no va a coincidir con ningún hecho y el aviso
+    tiene que salir.
+    """
+    return _PISTAS_MAGNITUD_DERIVADA.search(_pregunta_original(mensajes)) is not None
+
+
+def _aviso_si_porcentaje(unidad: str) -> str:
+    """La frase extra del aviso cuando `cifra` trae un tanto por ciento."""
+    if unidad not in UNIDADES_NO_VERIFICABLES:
+        return ""
+    return (
+        " Has rellenado `cifra` con un porcentaje o un múltiplo. Salvo que "
+        "la pregunta pida explícitamente esa magnitud, `cifra` es el valor "
+        "ABSOLUTO que devolvió get_xbrl_fact, en la unidad del hecho. El "
+        "porcentaje, si aporta algo, va solo en la prosa."
+    )
 
 
 def _formatear_disponibles(ticker: str, ejercicio: int) -> str:
@@ -128,8 +182,10 @@ def verificar_cifras_contra_xbrl(
        el dato no está en el corpus, que es una respuesta legítima y de hecho
        la correcta en varias preguntas. Verificarla contra XBRL no tiene
        sentido.
-    4. **La unidad no es un hecho XBRL.** Un porcentaje de crecimiento o un
-       múltiplo son magnitudes derivadas correctas que no aparecen en la tabla.
+    4. **La pregunta pide un porcentaje, un tipo o un múltiplo.** Un
+       crecimiento del 13 % no está en XBRL y contrastarlo sería una falsa
+       alarma. Si la pregunta no lo pide y aun así `cifra` es un porcentaje,
+       no se abstiene: ese número se compara como cualquier otro.
     5. **Ya se corrigió una vez en esta invocación.** El freno del bucle
        infinito, y no es opcional.
     6. **La cifra cuadra.** Que es el caso bueno.
@@ -167,7 +223,9 @@ def verificar_cifras_contra_xbrl(
         return None
 
     unidad = (getattr(respuesta, "unidad", None) or "").strip().lower()
-    if unidad in UNIDADES_NO_VERIFICABLES:
+    if unidad in UNIDADES_NO_VERIFICABLES and _pregunta_pide_magnitud_derivada(
+        state["messages"]
+    ):
         return None
 
     if _ya_se_corrigio(state["messages"]):
@@ -210,6 +268,7 @@ def verificar_cifras_contra_xbrl(
                             f"correcto. Si el dato no está en el corpus, dilo "
                             f"con fuente=\"ninguna\" y cifra=null en lugar de "
                             f"estimarlo."
+                            f"{_aviso_si_porcentaje(unidad)}"
                         ),
                     }
                 ],
@@ -236,6 +295,7 @@ def verificar_cifras_contra_xbrl(
                     f"que te piden no está en esa lista, la compañía no la "
                     f"reporta: dilo con fuente=\"ninguna\" y cifra=null. No la "
                     f"estimes ni la leas de la prosa del informe."
+                    f"{_aviso_si_porcentaje(unidad)}"
                 ),
             }
         ],
