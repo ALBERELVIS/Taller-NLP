@@ -51,9 +51,8 @@ from agente import config
 # de los datos. Mientras esté el marcador, la portada lo enseña en rojo para
 # que no se entregue sin rellenar.
 INTEGRANTES: list[str] = [
-    "NOMBRE Y APELLIDOS 1",
-    "NOMBRE Y APELLIDOS 2",
-    "NOMBRE Y APELLIDOS 3",
+    "Albert Martin Garcia",
+    "Jesús Buissón Poyatos",
 ]
 MARCADOR = "NOMBRE Y APELLIDOS"
 
@@ -588,11 +587,12 @@ def _resumen_ejecutivo(datos, titulo, subtitulo, parrafo, nota, espacio, histori
     )
     parrafo(
         "La tesis que defiende este trabajo es que, en este dominio, <b>la calidad no "
-        "está en el modelo sino en el enrutado y en la verificación</b>. El mismo modelo, "
-        "con el mismo prompt y las mismas cuatro herramientas, pasa de fallar la mitad de "
-        "las preguntas a resolverlas cambiando únicamente cómo recupera el texto y "
-        "añadiendo una comprobación automática de cada cifra contra los datos XBRL "
-        "auditados."
+        "está en el modelo sino en el enrutado y en la verificación</b>. El modelo y las "
+        "cuatro herramientas son los mismos. El sistema final, sobre el baseline "
+        "archivado, cambia cómo recupera el texto, contrasta cada cifra contra XBRL "
+        "—también un porcentaje que la pregunta no pedía— y afina las instrucciones de "
+        "búsqueda: la cifra es el valor absoluto, la sección solo se filtra si la "
+        "pregunta la nombra, y la consulta pide la explicación y no el número."
     )
 
     comparativa = datos.get("comparativa")
@@ -742,10 +742,11 @@ def _arquitectura(datos, titulo, subtitulo, parrafo, nota, espacio, historia, es
     historia.append(_tabla(filas, anchos=[70, 250, 95]))
     espacio(8)
     nota(
-        "Los tres se diferencian de forma acumulativa y en un solo eje cada vez. Modelo, "
-        "temperatura, prompt de sistema, esquema de salida, límites de llamadas y k son "
-        "idénticos en los tres. Es la única forma de que la diferencia entre dos filas de "
-        "la tabla final sea atribuible a lo que efectivamente se movió."
+        "Modelo, temperatura, esquema de salida, límites de llamadas y k son los mismos "
+        "en los tres perfiles. Las filas de baseline y de filtros están archivadas y no "
+        "se han vuelto a ejecutar. La fila final se ejecutó después, con el guardrail de "
+        "porcentajes y con instrucciones de búsqueda más estrictas, así que la diferencia "
+        "entre filas no aísla solo el retriever."
     )
 
 
@@ -993,7 +994,7 @@ def _retrieval(datos, titulo, subtitulo, parrafo, nota, espacio, historia, estil
         "señal léxica no tiene nada que aportar."
     )
     nota(
-        "Las reescrituras se cachean en <font face='Courier'>.cache/reescrituras.json</font>. "
+        "Las reescrituras se cachean en <font face='Courier'>.cache/reescrituras_v2.json</font>. "
         "Por reproducibilidad, para que la tabla se regenere sin volver a pagar y sin "
         "depender de que el modelo dé la misma respuesta dos veces; y por coste, porque "
         "durante el desarrollo la misma pregunta se reescribe decenas de veces sin que "
@@ -1030,6 +1031,11 @@ def _guardrails(datos, titulo, subtitulo, parrafo, nota, espacio, historia, esti
          "Contrastar dólares contra un recuento de acciones genera\n"
          "falsas alarmas: el modelo acierta, el guardrail salta y la\n"
          "«corrección» empeora la respuesta"],
+        ["Un porcentaje se contrasta contra XBRL,\nsalvo que la pregunta lo pida",
+         "Si la pregunta pide el margen en dólares y el modelo pone\n"
+         "un 46,9 %, eso no es una magnitud derivada: es el tanto por\n"
+         "ciento en el campo del valor absoluto. Solo se deja pasar\n"
+         "si pide explícitamente un porcentaje, un tipo o un múltiplo"],
         ["El mensaje correctivo ENUMERA los hechos\ndisponibles",
          "El error típico no es inventarse un número: es pedir el\n"
          "concepto equivocado. Con la lista delante, el modelo\n"
@@ -1276,9 +1282,14 @@ def _tabla_sistemas(datos, titulo, subtitulo, parrafo, nota, espacio, historia, 
                 coste_txt = f"cuesta <b>{razon_coste:.1f}×</b> más por pregunta"
             else:
                 coste_txt = f"cuesta <b>{razon_coste:.2f}×</b> lo que el baseline por pregunta"
+            if abs(delta) < 1e-9:
+                acierto_txt = "empata en acierto con el baseline"
+            else:
+                acierto_txt = (
+                    f"gana <b>{100 * delta:+.0f} puntos</b> de acierto respecto al baseline"
+                )
             parrafo(
-                f"En cifras, sobre el golden set oficial: el sistema final gana "
-                f"<b>{100 * delta:+.0f} puntos</b> de acierto respecto al baseline, "
+                f"En cifras, sobre el golden set oficial: el sistema final {acierto_txt}, "
                 f"{coste_txt} y tarda "
                 f"<b>{razon_lat:.1f}×</b> más."
             )
@@ -1371,9 +1382,12 @@ def _generalizacion(datos, titulo, subtitulo, parrafo, nota, espacio, historia, 
         "<font face='Courier'>list_available</font>, no está escrita en el código."
     )
     parrafo(
-        "<b>Las mejoras se reproducen en los dos conjuntos.</b> El golden set oficial no lo "
-        "hemos escrito nosotros, así que las ganancias que aparecen también ahí no pueden "
-        "explicarse por cómo redactamos nuestras preguntas."
+        "<b>El acierto empata en el oficial y sube poco en el propio.</b> En el golden "
+        "oficial el final queda en el 80 %, igual que el baseline. En el propio pasa del "
+        "67 % al 70 %. Lo que sí sube en los dos es la cifra contra XBRL, la cita "
+        "verificada en el oficial y el <i>recall@5</i> del agente. El oficial no lo "
+        "hemos escrito nosotros, así que esa subida de cita y de recall no se explica "
+        "por cómo redactamos nuestras preguntas."
     )
     parrafo(
         "<b>Los guardrails no dependen del enunciado de la pregunta.</b> La verificación "

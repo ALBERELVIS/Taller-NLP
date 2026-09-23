@@ -300,9 +300,11 @@ DOCSTRING_SEARCH_FILINGS = """Busca fragmentos de texto relevantes en los inform
     Args:
         query: Qué buscar. ESCRÍBELA EN INGLÉS: el corpus está en inglés y el
             modelo de búsqueda es monolingüe inglés. Usa el vocabulario del
-            propio informe ("net sales", "gross margin percentage",
-            "provision for income taxes"), no la traducción literal de la
-            pregunta.
+            propio informe ("net sales", "gross margin", "capital expenditures",
+            "effective tax rate", "export controls"), no la traducción literal
+            de la pregunta. Si la pregunta pide la explicación de un cambio, la
+            consulta nombra esa causa, no la cifra que ya tienes de
+            get_xbrl_fact.
         ticker: Filtra por compañía. PÁSALO SIEMPRE que la pregunta nombre una:
             sin él compiten los fragmentos de las otras cinco.
         fiscal_year: Filtra por ejercicio, 2024 o 2025. PÁSALO SIEMPRE que la
@@ -311,16 +313,19 @@ DOCSTRING_SEARCH_FILINGS = """Busca fragmentos de texto relevantes en los inform
             parecido a tu consulta puede ser el ejercicio equivocado.
         item: Filtra por sección. '1A' riesgos, '7' MD&A (explicaciones de la
             dirección sobre los resultados), '7A' riesgo de mercado (divisa,
-            tipos de interés), '8' estados financieros y sus notas. Pásalo
-            cuando sepas dónde vive la respuesta: el Item 7A son solo 37
-            fragmentos de 1.749 y sin filtro no compite.
+            tipos de interés), '8' estados financieros y sus notas. PÁSALO
+            SOLO si la pregunta nombra esa sección. Si lo pasas por intuición
+            y te equivocas, el fragmento correcto queda fuera y no hay forma
+            de recuperarlo. La excepción es una comparativa que pide la
+            explicación de la dirección: ahí el item es '7'.
         k: Cuántos fragmentos devolver. 5 por defecto; sube a 10 si la primera
             búsqueda no ha traído lo que buscabas.
 
-    Devuelve k fragmentos, cada uno precedido de su chunk_id entre corchetes.
-    COPIA ESE chunk_id en el campo chunk_id de tu respuesta y copia la frase
-    exacta que te sirve en el campo cita, palabra por palabra y sin traducir:
-    la cita se verifica automáticamente contra el texto original.
+    Devuelve k fragmentos, cada uno precedido de su chunk_id entre corchetes
+    y de su similitud. Copia en chunk_id el del fragmento de MAYOR similitud
+    que explica la causa, no uno que solo repite la cifra, y copia en cita
+    una frase entera de ese mismo fragmento, palabra por palabra y sin
+    traducir: la cita se verifica automáticamente contra el texto original.
 
     Si no encuentras nada útil, no repitas la misma consulta: quita el filtro
     de item, sube k, o reformula con otras palabras del informe."""
