@@ -1,0 +1,21 @@
+En las 10 preguntas ciegas el sistema final acierta 87.5 % (7 de 8 puntuables). En el golden propio, el mismo sistema acierta 70.0 %. El delta es de +18 puntos.
+
+Sube 18 puntos, más de una pregunta. El procedimiento aguanta fuera del conjunto con el que se iteró.
+
+Coste medio $0.0144 por pregunta (en el propio eran $0.0078), latencia media 22 s, 4.4 llamadas por pregunta. El proceso entero ha tardado 3.7 min, dentro de los veinte. El guardrail de cifras saltó 0 veces.
+
+El enrutado no cambia con el conjunto: una cifra sale de get_xbrl_fact, una explicación de search_filings, y una comparativa son dos consultas XBRL más el Item 7. Si el dato no está, fuente=ninguna y la cifra vacía.
+
+Fallos:
+- ho-005 (numerica, AMZN FY2025): el acierto de familia no se cumple. Usó list_available|get_xbrl_fact; se esperaba ['get_xbrl_fact'].
+  Pregunta: ¿Cuál fue el beneficio bruto de Amazon en 2025?
+  Esperado: Amazon no etiqueta GrossProfit en us-gaap, así que esa cifra no está en el corpus. La respuesta correcta es decirlo, no estimarla a partir de los ingresos y el coste de ventas.
+  Respondió: No es posible proporcionar el beneficio bruto de Amazon para FY2025 porque el concepto 'GrossProfit' no figura en el XBRL del ejercicio en el corpus. Según la lista de conceptos disponibles para AMZN FY2025, la compañía reportó otros conceptos pero no 'GrossProfit'.
+- ho-006 (numerica, NVDA FY2023): el acierto de familia no se cumple. Usó list_available|get_xbrl_fact|list_available; se esperaba ['list_available'].
+  Pregunta: ¿Cuál fue el revenue de NVIDIA en el ejercicio fiscal 2023?
+  Esperado: El corpus solo cubre FY2024 y FY2025, así que FY2023 no está. La respuesta correcta es decirlo; comprobarlo es para lo que existe list_available.
+  Respondió: No puedo obtenerlo: el corpus no contiene el ejercicio fiscal 2023 para NVIDIA. Solo están disponibles FY2024 y FY2025 para NVDA, así que no hay un 'revenue' de FY2023 en estos 10-K cargados.
+- ho-008 (comparativa, GOOGL FY2025): la cita no es la frase que responde. Usó get_xbrl_fact|get_xbrl_fact|search_filings|list_available|get_xbrl_fact|get_xbrl_fact|search_filings|search_filings; se esperaba ['get_xbrl_fact', 'search_filings'].
+  Pregunta: ¿Cuánto aumentó el gasto en I+D de Alphabet entre 2024 y 2025, y qué advierte la compañía sobre la relación entre el gasto en compensación y la plantilla?
+  Esperado: De 49.326 millones de dólares a 61.087 millones de dólares (+23,8 %). La compañía advierte de que el gasto en compensación no sigue directamente a la plantilla, entre otras cosas por las acciones que consolidan con el tiempo.
+  Respondió: El gasto en I+D pasó de $49,326,000,000 en el ejercicio fiscal 2024 a $61,087,000,000 en el ejercicio fiscal 2025, un aumento absoluto de $11,761,000,000 (≈24%). La compañía advierte que gran parte del incremento en el gasto de compensación se debió a mayores gastos por compensación basada en acciones, incluida una carga por valoración relacionada con Waymo, de modo que el gasto en compensación puede aumentar por efectos de valoración o cargos de SBC y no solo por el tamaño de la plantilla.
