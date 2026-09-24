@@ -1,0 +1,21 @@
+Hola Guillermo!!! 
+
+Muchas gracias por tu feedback, y por tomarte el tiempo de responder las preguntas. He disfrutado mucho de hacer la práctica. 
+Te escribo esto porque si bien te he subido el NB ejecutado con el 9/10, si lo reejecutas, como tiene un valor de temperatura alto, me han salido 2 veces 10/10. 
+Esto me ha sorprendido.
+Por hacer mas la broma que algo, y por un tema de transparencia, pues te lo dejo aquí el otro intento:
+
+Un saludo!
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+En las 10 preguntas ciegas el sistema final acierta 100.0 % (10 de 10 puntuables). En el golden propio, el mismo sistema acierta 70.0 %. El delta es de +30 puntos.
+
+Sube 30 puntos, más de una pregunta. El procedimiento aguanta fuera del conjunto con el que se iteró.
+
+Coste medio $0.0154 por pregunta (en el propio eran $0.0078), latencia media 7 s, 3.5 llamadas por pregunta. El proceso entero ha tardado 1.1 min, dentro de los veinte. El guardrail de cifras saltó 0 veces.
+
+El enrutado no cambia con el conjunto: una cifra sale de get_xbrl_fact, una explicación de search_filings, y una comparativa son dos consultas XBRL más el Item 7. Si el dato no está, fuente=ninguna y la cifra vacía.
+
+Fallos:
+- No hay preguntas fallidas.
